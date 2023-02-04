@@ -15,9 +15,9 @@ function Get-WinUpdate {
                 $server_name = $data.MachineName
     
                 $kb_name = $data.Message | `
-                ForEach-Object { $_ -replace ("successfully changed to the Installed.", "") `
-                -replace ("Package ", "") `
-                -replace ("was state.", "") }
+                    ForEach-Object { $_ -replace ("successfully changed to the Installed.", "") `
+                        -replace ("Package ", "") `
+                        -replace ("was state.", "") }
     
                 $Install_date = $data.TimeCreated
     
@@ -25,17 +25,31 @@ function Get-WinUpdate {
                 if ($data.UserID -eq "S-1-5-18") {
                     $user = "System"
                 }
-    
+
+                $last_update = (New-TimeSpan -Start ($data.TimeCreated) -End (Get-Date)).Days
+
+                $status = ""
+                if ($last_update -lt "30") {
+                    $status = "Not OK"
+                }
+
+                else {
+                    $status = "OK"
+                }
+
                 [PSCustomObject]@{
-                    Server      = $server_name
-                    KB          = $kb_name
-                    InstallDate = $Install_date
-                    User        = $user
+                    Server              = $server_name
+                    KB                  = $kb_name
+                    InstallDate         = $Install_date
+                    User                = $user
+                    "LastUpdate (Days)" = $last_update
+                    Status              = $status
                 }
             }
         }
     }
 
-    $result | Select-Object Server,KB,InstallDate,User | Format-Table -AutoSize
+    $result | Select-Object Server, KB, InstallDate, User, "LastUpdate (Days)", Status | Format-Table -AutoSize
 }
+
 Get-WinUpdate -object $env:COMPUTERNAME
